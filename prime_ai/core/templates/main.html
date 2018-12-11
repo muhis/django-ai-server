@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Trial run {{ uuid }}</title>
+  <meta name="description" content="Trial for finding prime number">
+  <meta name="Mohammed Salman" content="Script to find prime numbers">
+</head>
+
+<body>
+<h1> Your computer power will be used now to find prime numbers </h1>
+<p>Your trial UUID is {{uuid}}</p>
+<p ID='result'></p>
+</body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.3/dist/tf.min.js"></script>
+<script>
+const uuid = '{{uuid}}'
+    function showUserSuccess(obj){
+        document.getElementById('result').innerHTML += '</br> Result sent to the server.';
+    };
+    function reportResult(result){
+        string_result = JSON.stringify(result);
+        $.post({{report_url}}, result,
+            function(data, status){
+                showUserSuccess()
+            }
+        );
+    };
+    
+    const model = tf.sequential();
+    {% for layer in layers %}
+        model.add(tf.layers.{{ layer }}({units: 1, inputShape: [1]}));
+    {% endfor %}
+    // Prepare the model for training: Specify the loss and the optimizer.
+    const learningRate = 0.0001;
+    const optimizer = tf.train.sgd(learningRate);
+
+    model.compile({
+    loss: 'meanSquaredError',
+    optimizer: optimizer,      
+    });
+    const xs = tf.tensor2d({{x_train}}, [{{ x_train|length }}, 1]);
+    const ys = tf.tensor2d({{y_train}}, [{{ y_train|length }}, 1]);
+    const x_test = tf.tensor2d({{x_test}}, [{{ x_test|length }}, 1]);
+    const y_test = tf.tensor2d({{y_test}}, [{{ y_test|length }}, 1]);
+    // Train the model using the data.
+    model.fit(xs, ys, {epochs: 150}).then(() => {
+        const result = model.evaluate(x_test, y_test, {batchSize: 4});
+        document.getElementById('result').innerHTML = result + '</br> We will send this result to the server now.';
+        reportResult({'result': result.toString(), 'uuid': uuid});
+    });
+    
+</script>
+</html>
